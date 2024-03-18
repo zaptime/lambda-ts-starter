@@ -1,0 +1,53 @@
+service: og-generator
+frameworkVersion: '3'
+useDotenv: true
+
+package:
+  exclude:
+    - "tests/**"
+
+provider:
+  name: aws
+  region: eu-west-1
+  runtime: nodejs18.x
+  versionFunctions: false
+  timeout: 30
+  stage: ${opt:stage, 'dev'}
+  httpApi:
+    cors: true
+  environment:
+    DB_DATABASE: ${self:custom.dbDatabase.${self:provider.stage}}
+    DB_USERNAME: ${self:custom.dbUser.${self:provider.stage}}
+    DB_PASSWORD: ${self:custom.dbPassword.${self:provider.stage}}
+    DB_HOST: ${self:custom.dbHost.${self:provider.stage}}
+    DB_PORT: ${self:custom.dbPort.${self:provider.stage}}
+
+custom:
+  stages:
+    - dev
+    - staging
+    - prod
+  dbDatabase:
+    dev: ${env:DB_DATABASE}
+  dbUser:
+    dev: ${env:DB_USERNAME}
+  dbPassword:
+    dev: ${env:DB_PASSWORD}
+  dbHost:
+    dev: ${env:DB_HOST}
+  dbPort:
+    dev: ${env:DB_PORT}
+
+functions:
+  preview:
+    handler: functions/og-image/create.create
+    events:
+      - httpApi:
+          path: /og-image/{test}
+          method: post
+
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-stage-manager
